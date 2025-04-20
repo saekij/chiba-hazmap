@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <title>千葉県ハザードマップ</title>
+  <link rel="icon" href="favicon.ico" type="image/png" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    #map { width: 100%; height: 100vh; }
+    .map-legend, .filter-panel {
+      position: absolute;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 5px;
+      border-radius: 5px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.3);
+    }
+    .map-legend { top: 280px; }
+    .filter-panel { top: 60px; max-height: 200px; overflow-y: auto; font-size: 14px; }
+    .map-legend img { width: 200px; display: block; }
+    .leaflet-control-scale {
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      right: auto !important;
+      bottom: 10px !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div class="filter-panel" id="filterPanel"><i>施設データは現在読み込まれていません</i></div>
+  <div class="map-legend"><img src="shinsui_legend_popup.png" alt="洪水凡例"></div>
+  <script>
+    const map = L.map('map', { zoomControl: false }).setView([35.605, 140.123], 10);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    L.control.scale({ position: 'bottomleft', metric: true, imperial: false }).addTo(map);
+
+    const base = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', { attribution: "地理院タイル" }).addTo(map);
+
+    const overlays = {
+      "標高段彩図": L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/relief/{z}/{x}/{y}.png', { opacity: 0.4, attribution: "地理院タイル（標高段彩図）" }),
+      "洪水・内水": L.tileLayer('https://disaportal.gsi.go.jp/data/raster/01_flood_l2_shinsuishin_data/{z}/{x}/{y}.png', { attribution: "洪水・内水" }),
+      "土砂災害": L.tileLayer('https://disaportal.gsi.go.jp/data/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png', { opacity: 0.6, attribution: "土砂災害" }),
+      "高潮": L.tileLayer('https://disaportal.gsi.go.jp/data/raster/03_hightide_l2_shinsuishin_data/{z}/{x}/{y}.png', { attribution: "高潮" }),
+      "津波": L.tileLayer('https://disaportal.gsi.go.jp/data/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png', { attribution: "津波" })
+    };
+
+    const allEvacLayer = L.layerGroup();
+    overlays["避難所"] = allEvacLayer;
+    fetch('evac/P20-12_12.geojson').then(res => res.json()).then(data => {
+      const layer = L.geoJSON(data, {
+        pointToLayer: (f, latlng) => L.circleMarker(latlng, {
+          radius: 8,
+          fillColor: "blue",
+          color: "#003366",
+          weight: 1,
+          opacity: 1,
+          fillOpacity: 0.6
+        })
+      });
+      allEvacLayer.addLayer(layer);
+    });
+
+    const steepLayer = L.layerGroup();
+    overlays["急傾斜地崩壊危険区域"] = steepLayer;
+    fetch('steep/A47-21_12.geojson').then(res => res.json()).then(data => {
+      const layer = L.geoJSON(data, { style: { color: "#aa4400", weight: 1, fillOpacity: 0.3 } });
+      steepLayer.addLayer(layer);
+    });
+
+    const kinkyuLayer = L.layerGroup();
+    overlays["緊急輸送道路"] = kinkyuLayer;
+    fetch('kinkyu/N10-20_12.geojson').then(res => res.json()).then(data => {
+      const layer = L.geoJSON(data, { style: { color: "#ff1493", weight: 2 } });
+      kinkyuLayer.addLayer(layer);
+    });
+
+    const doshaLayer = L.layerGroup();
+    overlays["土砂災害警戒区域"] = doshaLayer;
+    fetch('dosha/A33-23_12Polygon.geojson').then(res => res.json()).then(data => {
+      const layer = L.geoJSON(data, { style: { color: "#cc0000", weight: 1, fillOpacity: 0.3 } });
+      doshaLayer.addLayer(layer);
+    });
+
+    L.control.layers(null, overlays).addTo(map);
+  </script>
+</body>
+</html>
