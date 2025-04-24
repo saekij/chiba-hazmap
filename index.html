@@ -16,7 +16,7 @@
       border-radius: 5px;
       box-shadow: 0 0 6px rgba(0,0,0,0.3);
     }
-    .map-legend { top: 280px; }
+    .map-legend { top: 80px; }
     .filter-panel { top: 60px; max-height: 200px; overflow-y: auto; font-size: 14px; }
     .map-legend img { width: 200px; display: block; }
     .leaflet-control-scale {
@@ -29,7 +29,6 @@
 </head>
 <body>
   <div id="map"></div>
-  <div class="filter-panel" id="filterPanel"><i>施設データは現在読み込まれていません</i></div>
   <div class="map-legend"><img src="shinsui_legend_popup.png" alt="洪水凡例"></div>
   <script>
     const map = L.map('map', { zoomControl: false }).setView([35.605, 140.123], 11);
