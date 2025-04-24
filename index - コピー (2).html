@@ -49,52 +49,78 @@
       "津波": L.tileLayer('https://disaportal.gsi.go.jp/data/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png', { attribution: "津波" })
     };
 
-    const steepLayer = L.layerGroup(); overlaysBase["急傾斜地崩壊危険区域"] = steepLayer;
+    const steepLayer = L.layerGroup();
+    overlaysBase["急傾斜地崩壊危険区域"] = steepLayer;
     fetch('steep/A47-21_12.geojson').then(res => res.json()).then(data => {
-      steepLayer.addLayer(L.geoJSON(data, { style: { color: "#aa4400", weight: 1, fillOpacity: 0.3 } }));
+      const layer = L.geoJSON(data, { style: { color: "#aa4400", weight: 1, fillOpacity: 0.3 } });
+      steepLayer.addLayer(layer);
     });
 
-    const slipLayer = L.layerGroup(); overlaysBase["地すべり危険箇所"] = slipLayer;
+    const slipLayer = L.layerGroup();
+    overlaysBase["地すべり危険箇所"] = slipLayer;
     fetch('slip/A46-a-21_12.geojson').then(res => res.json()).then(data => {
-      slipLayer.addLayer(L.geoJSON(data, { style: { color: "#663399", weight: 1, fillOpacity: 0.3 } }));
+      const layer = L.geoJSON(data, { style: { color: "#663399", weight: 1, fillOpacity: 0.3 } });
+      slipLayer.addLayer(layer);
     });
 
-    const kikenLayer = L.layerGroup(); overlaysBase["災害危険区域"] = kikenLayer;
+    const kikenLayer = L.layerGroup();
+    overlaysBase["災害危険区域"] = kikenLayer;
     fetch('kiken/A48-21_12.geojson').then(res => res.json()).then(data => {
-      kikenLayer.addLayer(L.geoJSON(data, { style: { color: "#FF6600", weight: 1, fillOpacity: 0.3 } }));
+      const layer = L.geoJSON(data, { style: { color: "#FF6600", weight: 1, fillOpacity: 0.3 } });
+      kikenLayer.addLayer(layer);
     });
 
-    const kinkyuLayer = L.layerGroup(); overlaysBase["緊急輸送道路"] = kinkyuLayer;
+    const kinkyuLayer = L.layerGroup();
+    overlaysBase["緊急輸送道路"] = kinkyuLayer;
     fetch('kinkyu/N10-20_12.geojson').then(res => res.json()).then(data => {
-      kinkyuLayer.addLayer(L.geoJSON(data, { style: { color: "#ff1493", weight: 2 } }));
+      const layer = L.geoJSON(data, { style: { color: "#ff1493", weight: 2 } });
+      kinkyuLayer.addLayer(layer);
     });
 
-    const doshaLayer = L.layerGroup(); overlaysBase["土砂災害警戒区域"] = doshaLayer;
+    const doshaLayer = L.layerGroup();
+    overlaysBase["土砂災害警戒区域"] = doshaLayer;
     fetch('dosha/A33-23_12Polygon.geojson').then(res => res.json()).then(data => {
-      doshaLayer.addLayer(L.geoJSON(data, { style: { color: "#cc0000", weight: 1, fillOpacity: 0.3 } }));
+      const layer = L.geoJSON(data, { style: { color: "#cc0000", weight: 1, fillOpacity: 0.3 } });
+      doshaLayer.addLayer(layer);
     });
 
-    const ekijoukaLayer = L.layerGroup(); overlaysBase["液状化危険度"] = ekijoukaLayer;
+    const ekijoukaLayer = L.layerGroup();
+    overlaysBase["液状化危険度"] = ekijoukaLayer;
     fetch('ekijouka/ekijouka.geojson').then(res => res.json()).then(data => {
       data.features.forEach(f => {
         const coords = f.geometry.coordinates;
-        const lng = coords[0], lat = coords[1];
+        const lng = coords[0];
+        const lat = coords[1];
         const size = 0.0035;
-        const bounds = [[lat - size / 2, lng - size / 2], [lat + size / 2, lng + size / 2]];
+        const bounds = [
+          [lat - size / 2, lng - size / 2],
+          [lat + size / 2, lng + size / 2]
+        ];
+
         let color = "gray";
         const risk = Number(f.properties.risk);
         if (risk === 3) color = "#cc1122";
         else if (risk === 2) color = "#cc6644";
         else if (risk === 1) color = "#ddaaaa";
-        const popupText = `<b>${f.properties['type_jcode'] || '分類なし'}</b><br>危険度: ${risk ?? '不明'}`;
-        const rect = L.rectangle(bounds, { color: color, weight: 1, fillColor: color, fillOpacity: 0.5 }).bindPopup(popupText);
+
+        const popupText = `<b>${f.properties['type_jcode'] || '分類なし'}</b><br>危険度: ${f.properties.risk ?? '不明'}`;
+        const rect = L.rectangle(bounds, {
+          color: color,
+          weight: 1,
+          fillColor: color,
+          fillOpacity: 0.5
+        }).bindPopup(popupText);
         ekijoukaLayer.addLayer(rect);
       });
     });
 
-    const evacLayer = L.layerGroup(); overlaysBase["避難所"] = evacLayer;
+    const evacLayer = L.layerGroup();
+    const schoolLayer = L.layerGroup();
+    overlaysBase["避難所"] = evacLayer;
+    overlaysBase["教育機関"] = schoolLayer;
+
     fetch('evac/P20-12_12.geojson').then(res => res.json()).then(data => {
-      evacLayer.addLayer(L.geoJSON(data, {
+      const layer = L.geoJSON(data, {
         pointToLayer: (f, latlng) => L.circleMarker(latlng, {
           radius: 8,
           fillColor: "blue",
@@ -103,10 +129,10 @@
           opacity: 1,
           fillOpacity: 0.6
         })
-      }));
+      });
+      evacLayer.addLayer(layer);
     });
 
-    const schoolLayer = L.layerGroup(); overlaysBase["教育機関"] = schoolLayer;
     fetch('school/P29-23_12.geojson').then(res => res.json()).then(data => {
       const layer = L.geoJSON(data, {
         pointToLayer: (f, latlng) => L.circleMarker(latlng, {
@@ -118,8 +144,8 @@
           fillOpacity: 0.7
         }),
         onEachFeature: (feature, layer) => {
-          if (feature.properties && feature.properties['P29_004']) {
-            layer.bindPopup(`<b>${feature.properties['P29_004']}</b>`);
+          if (feature.properties && feature.properties.学校名) {
+            layer.bindPopup(`<b>${feature.properties.学校名}</b>`);
           }
         }
       });
